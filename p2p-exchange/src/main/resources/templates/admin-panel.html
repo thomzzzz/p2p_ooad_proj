@@ -1,0 +1,1080 @@
+<div class="refresh-control">
+    <span>Auto-refresh:</span>
+    <select id="refresh-interval">
+        <option value="0">Off</option>
+        <option value="5000">5 seconds</option>
+        <option value="10000">10 seconds</option>
+        <option value="30000" selected>30 seconds</option>
+        <option value="60000">1 minute</option>
+    </select>
+</div>
+</div>
+
+<div class="admin-stats">
+<div class="stat-card">
+    <div class="stat-value" id="total-users">0</div>
+    <div class="stat-label">Total Users</div>
+</div>
+<div class="stat-card">
+    <div class="stat-value" id="active-users">0</div>
+    <div class="stat-label">Active Users</div>
+</div>
+<div class="stat-card">
+    <div class="stat-value" id="total-files">0</div>
+    <div class="stat-label">Total Files</div>
+</div>
+<div class="stat-card">
+    <div class="stat-value" id="total-rooms">0</div>
+    <div class="stat-label">Total Rooms</div>
+</div>
+</div>
+
+<div class="admin-tabs">
+<div class="admin-tab active" data-tab="users">User Management</div>
+<div class="admin-tab" data-tab="storage">Storage Management</div>
+<div class="admin-tab" data-tab="logs">System Logs</div>
+<div class="admin-tab" data-tab="settings">System Settings</div>
+</div>
+
+<div class="admin-tab-content active" id="users-tab">
+<div class="card">
+    <div class="section-header">
+        <h3>User Management</h3>
+        <button class="button primary" id="add-user-btn">Add New User</button>
+    </div>
+    
+    <div class="search-bar">
+        <input type="text" id="user-search" placeholder="Search users...">
+        <button class="search-btn">Search</button>
+    </div>
+    
+    <table class="admin-table" id="user-management-table">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Last Login</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Table rows will be populated by JavaScript -->
+        </tbody>
+    </table>
+</div>
+</div>
+
+<div class="admin-tab-content" id="storage-tab">
+<div class="card">
+    <div class="section-header">
+        <h3>Storage Usage</h3>
+        <select id="storage-filter">
+            <option value="all">All Storage</option>
+            <option value="user">By User</option>
+            <option value="type">By File Type</option>
+        </select>
+    </div>
+    
+    <div class="system-section">
+        <h4>System Storage</h4>
+        <div class="storage-usage">
+            <div class="storage-bar" id="system-storage-bar"></div>
+        </div>
+        <div class="storage-details">
+            <span id="storage-used">0 MB</span> of <span id="storage-total">100 GB</span> used (<span id="storage-percent">0%</span>)
+        </div>
+    </div>
+    
+    <div class="storage-by-user" id="storage-by-user">
+        <h4>Storage by User</h4>
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Files Count</th>
+                    <th>Storage Used</th>
+                    <th>Percentage</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Table rows will be populated by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="storage-by-type" id="storage-by-type" style="display: none;">
+        <h4>Storage by File Type</h4>
+        <div id="file-type-chart" style="height: 400px;">
+            <!-- Chart will be rendered by JavaScript -->
+        </div>
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>File Type</th>
+                    <th>Files Count</th>
+                    <th>Storage Used</th>
+                    <th>Percentage</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Table rows will be populated by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+</div>
+</div>
+
+<div class="admin-tab-content" id="logs-tab">
+<div class="card">
+    <div class="section-header">
+        <h3>System Logs</h3>
+        <button class="button secondary" id="export-logs-btn">Export Logs</button>
+    </div>
+    
+    <div class="filter-bar">
+        <div class="filter-item">
+            <input type="checkbox" id="error-logs" checked>
+            <label for="error-logs">Errors</label>
+        </div>
+        <div class="filter-item">
+            <input type="checkbox" id="warning-logs" checked>
+            <label for="warning-logs">Warnings</label>
+        </div>
+        <div class="filter-item">
+            <input type="checkbox" id="info-logs" checked>
+            <label for="info-logs">Info</label>
+        </div>
+        <div class="filter-item">
+            <label for="log-search">Filter:</label>
+            <input type="text" id="log-search" placeholder="Filter logs...">
+        </div>
+    </div>
+    
+    <div class="log-container" id="system-logs">
+        <!-- Log entries will be populated by JavaScript -->
+    </div>
+</div>
+</div>
+
+<div class="admin-tab-content" id="settings-tab">
+<div class="card">
+    <div class="section-header">
+        <h3>System Settings</h3>
+        <button class="button primary" id="save-settings-btn">Save Settings</button>
+    </div>
+    
+    <form id="system-settings-form">
+        <div class="settings-section">
+            <h4>File Management</h4>
+            <div class="form-group">
+                <label for="max-file-size">Maximum File Size (MB)</label>
+                <input type="number" id="max-file-size" name="maxFileSize" min="1" max="1000" value="100">
+            </div>
+            <div class="form-group">
+                <label for="allowed-file-types">Allowed File Types</label>
+                <input type="text" id="allowed-file-types" name="allowedFileTypes" value="image/*,text/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.*,application/zip,application/x-rar-compressed">
+                <p class="help-text">Comma-separated list of MIME types or patterns</p>
+            </div>
+            <div class="form-group">
+                <label for="storage-path">Storage Path</label>
+                <input type="text" id="storage-path" name="storagePath" value="./uploads">
+            </div>
+        </div>
+        
+        <div class="settings-section">
+            <h4>Security</h4>
+            <div class="form-group">
+                <label for="token-expiration">JWT Token Expiration (hours)</label>
+                <input type="number" id="token-expiration" name="tokenExpiration" min="1" max="168" value="24">
+            </div>
+            <div class="form-group">
+                <label for="password-policy">Password Policy</label>
+                <select id="password-policy" name="passwordPolicy">
+                    <option value="medium">Medium (minimum 8 chars, uppercase, lowercase, numbers)</option>
+                    <option value="strong" selected>Strong (minimum 8 chars, uppercase, lowercase, numbers, special)</option>
+                    <option value="very-strong">Very Strong (minimum 12 chars, uppercase, lowercase, numbers, special)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="enforce-2fa" name="enforce2FA">
+                    <label for="enforce-2fa">Enforce Two-Factor Authentication for all users</label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="settings-section">
+            <h4>Room Management</h4>
+            <div class="form-group">
+                <label for="max-room-members">Maximum Members per Room</label>
+                <input type="number" id="max-room-members" name="maxRoomMembers" min="2" max="100" value="50">
+            </div>
+            <div class="form-group">
+                <label for="max-room-files">Maximum Files per Room</label>
+                <input type="number" id="max-room-files" name="maxRoomFiles" min="1" max="1000" value="100">
+            </div>
+            <div class="form-group">
+                <label for="room-link-expiry">Room Share Link Expiry (hours, 0 for never)</label>
+                <input type="number" id="room-link-expiry" name="roomLinkExpiry" min="0" max="168" value="24">
+            </div>
+        </div>
+        
+        <div class="settings-section">
+            <h4>System</h4>
+            <div class="form-group">
+                <label for="log-level">Log Level</label>
+                <select id="log-level" name="logLevel">
+                    <option value="DEBUG">Debug</option>
+                    <option value="INFO" selected>Info</option>
+                    <option value="WARN">Warning</option>
+                    <option value="ERROR">Error</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="session-timeout">Session Timeout (minutes)</label>
+                <input type="number" id="session-timeout" name="sessionTimeout" min="5" max="180" value="30">
+            </div>
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="maintenance-mode" name="maintenanceMode">
+                    <label for="maintenance-mode">Enable Maintenance Mode</label>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+</div>
+</div>
+</main>
+
+<footer>
+<p>&copy; 2025 P2P Information Exchange System. All Rights Reserved.</p>
+</footer>
+
+<!-- Add New User Modal -->
+<div id="add-user-modal" class="modal">
+<div class="modal-content">
+<span class="close">&times;</span>
+<h3>Add New User</h3>
+<form id="add-user-form">
+<div class="form-group">
+    <label for="new-username">Username</label>
+    <input type="text" id="new-username" name="username" required>
+</div>
+<div class="form-group">
+    <label for="new-email">Email</label>
+    <input type="email" id="new-email" name="email" required>
+</div>
+<div class="form-group">
+    <label for="new-password">Password</label>
+    <input type="password" id="new-password" name="password" required>
+</div>
+<div class="form-group">
+    <label for="new-role">Role</label>
+    <select id="new-role" name="role">
+        <option value="ROLE_USER">User</option>
+        <option value="ROLE_ADMIN">Admin</option>
+    </select>
+</div>
+<div class="form-actions">
+    <button type="submit" class="button primary">Add User</button>
+    <button type="button" class="button secondary" id="cancel-add-user">Cancel</button>
+</div>
+</form>
+</div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+// Tab switching
+const tabs = document.querySelectorAll('.admin-tab');
+const tabContents = document.querySelectorAll('.admin-tab-content');
+
+tabs.forEach(tab => {
+tab.addEventListener('click', function() {
+    const tabId = this.dataset.tab;
+    
+    // Remove active class from all tabs and contents
+    tabs.forEach(t => t.classList.remove('active'));
+    tabContents.forEach(c => c.classList.remove('active'));
+    
+    // Add active class to selected tab and content
+    this.classList.add('active');
+    document.getElementById(tabId + '-tab').classList.add('active');
+});
+});
+
+// Storage filter
+const storageFilter = document.getElementById('storage-filter');
+const storageByUser = document.getElementById('storage-by-user');
+const storageByType = document.getElementById('storage-by-type');
+
+storageFilter.addEventListener('change', function() {
+const filterValue = this.value;
+
+if (filterValue === 'user') {
+    storageByUser.style.display = 'block';
+    storageByType.style.display = 'none';
+} else if (filterValue === 'type') {
+    storageByUser.style.display = 'none';
+    storageByType.style.display = 'block';
+} else {
+    storageByUser.style.display = 'block';
+    storageByType.style.display = 'block';
+}
+});
+
+// Log filters
+const errorLogsCheckbox = document.getElementById('error-logs');
+const warningLogsCheckbox = document.getElementById('warning-logs');
+const infoLogsCheckbox = document.getElementById('info-logs');
+const logSearch = document.getElementById('log-search');
+
+function filterLogs() {
+const showErrors = errorLogsCheckbox.checked;
+const showWarnings = warningLogsCheckbox.checked;
+const showInfo = infoLogsCheckbox.checked;
+const searchText = logSearch.value.toLowerCase();
+
+const logEntries = document.querySelectorAll('.log-entry');
+
+logEntries.forEach(entry => {
+    const isError = entry.classList.contains('error');
+    const isWarning = entry.classList.contains('warning');
+    const isInfo = entry.classList.contains('info');
+    const logText = entry.textContent.toLowerCase();
+    
+    let show = false;
+    
+    // Check log type
+    if ((isError && showErrors) || 
+        (isWarning && showWarnings) || 
+        (isInfo && showInfo)) {
+        show = true;
+    }
+    
+    // Check search text
+    if (searchText && !logText.includes(searchText)) {
+        show = false;
+    }
+    
+    entry.style.display = show ? 'block' : 'none';
+});
+}
+
+errorLogsCheckbox.addEventListener('change', filterLogs);
+warningLogsCheckbox.addEventListener('change', filterLogs);
+infoLogsCheckbox.addEventListener('change', filterLogs);
+logSearch.addEventListener('input', filterLogs);
+
+// Add user modal
+const addUserBtn = document.getElementById('add-user-btn');
+const addUserModal = document.getElementById('add-user-modal');
+const closeAddUserBtn = addUserModal.querySelector('.close');
+const cancelAddUserBtn = document.getElementById('cancel-add-user');
+const addUserForm = document.getElementById('add-user-form');
+
+addUserBtn.addEventListener('click', function() {
+addUserModal.style.display = 'block';
+});
+
+closeAddUserBtn.addEventListener('click', function() {
+addUserModal.style.display = 'none';
+});
+
+cancelAddUserBtn.addEventListener('click', function() {
+addUserModal.style.display = 'none';
+});
+
+window.addEventListener('click', function(e) {
+if (e.target === addUserModal) {
+    addUserModal.style.display = 'none';
+}
+});
+
+addUserForm.addEventListener('submit', function(e) {
+e.preventDefault();
+
+const formData = new FormData(addUserForm);
+const userData = {
+    username: formData.get('username'),
+    email: formData.get('email'),
+    passwordHash: formData.get('password'),
+    role: formData.get('role')
+};
+
+// Create user
+fetch('/api/admin/users', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
+    },
+    body: JSON.stringify(userData)
+})
+.then(response => {
+    if (response.ok) {
+        return response.blob();
+    } else {
+        throw new Error('Failed to export logs');
+    }
+})
+.then(blob => {
+    // Create download link
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'system_logs_' + new Date().toISOString().slice(0, 10) + '.txt';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+})
+.catch(error => {
+    showNotification('Error: ' + error.message, 'error');
+});
+});
+
+// Save system settings
+document.getElementById('save-settings-btn').addEventListener('click', function() {
+const formData = new FormData(document.getElementById('system-settings-form'));
+const settings = {
+    fileManagement: {
+        maxFileSize: parseInt(formData.get('maxFileSize')),
+        allowedFileTypes: formData.get('allowedFileTypes').split(','),
+        storagePath: formData.get('storagePath')
+    },
+    security: {
+        tokenExpiration: parseInt(formData.get('tokenExpiration')),
+        passwordPolicy: formData.get('passwordPolicy'),
+        enforce2FA: formData.get('enforce2FA') === 'on'
+    },
+    roomManagement: {
+        maxRoomMembers: parseInt(formData.get('maxRoomMembers')),
+        maxRoomFiles: parseInt(formData.get('maxRoomFiles')),
+        roomLinkExpiry: parseInt(formData.get('roomLinkExpiry'))
+    },
+    system: {
+        logLevel: formData.get('logLevel'),
+        sessionTimeout: parseInt(formData.get('sessionTimeout')),
+        maintenanceMode: formData.get('maintenanceMode') === 'on'
+    }
+};
+
+fetch('/api/admin/settings', {
+    method: 'PUT',
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
+    },
+    body: JSON.stringify(settings)
+})
+.then(response => {
+    if (response.ok) {
+        showNotification('Settings saved successfully', 'success');
+    } else {
+        throw new Error('Failed to save settings');
+    }
+})
+.catch(error => {
+    showNotification('Error: ' + error.message, 'error');
+});
+});
+
+// Helper function to format file size
+function formatFileSize(sizeInBytes) {
+if (sizeInBytes < 1024) {
+    return sizeInBytes + ' B';
+} else if (sizeInBytes < 1024 * 1024) {
+    return (sizeInBytes / 1024).toFixed(1) + ' KB';
+} else if (sizeInBytes < 1024 * 1024 * 1024) {
+    return (sizeInBytes / (1024 * 1024)).toFixed(1) + ' MB';
+} else {
+    return (sizeInBytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+}
+}
+
+// Helper function to show notifications
+function showNotification(message, type) {
+// Check if notifications container exists, create if not
+let notificationsContainer = document.getElementById('notifications-container');
+if (!notificationsContainer) {
+    notificationsContainer = document.createElement('div');
+    notificationsContainer.id = 'notifications-container';
+    document.body.appendChild(notificationsContainer);
+}
+
+// Create notification element
+const notification = document.createElement('div');
+notification.className = 'notification ' + (type || '');
+notification.textContent = message;
+
+// Add to container
+notificationsContainer.appendChild(notification);
+
+// Auto-remove after delay
+setTimeout(() => {
+    notification.classList.add('fade-out');
+    setTimeout(() => {
+        notificationsContainer.removeChild(notification);
+    }, 500);
+}, 5000);
+}
+});
+</script>
+</body>
+</html>
+        addUserModal.style.display = 'none';
+        showNotification('User created successfully', 'success');
+        addUserForm.reset();
+        
+        // Refresh user list
+        fetchUsers();
+    } else {
+        throw new Error('Failed to create user');
+    }
+})
+.catch(error => {
+    showNotification('Error: ' + error.message, 'error');
+});
+});
+
+// Auto-refresh
+let refreshInterval;
+const refreshSelect = document.getElementById('refresh-interval');
+
+refreshSelect.addEventListener('change', function() {
+const interval = parseInt(this.value);
+
+clearInterval(refreshInterval);
+
+if (interval > 0) {
+    refreshInterval = setInterval(function() {
+        fetchAdminData();
+    }, interval);
+}
+});
+
+// Initial data fetch
+fetchAdminData();
+
+// Set initial auto-refresh
+const initialInterval = parseInt(refreshSelect.value);
+if (initialInterval > 0) {
+refreshInterval = setInterval(function() {
+    fetchAdminData();
+}, initialInterval);
+}
+
+// Helper function to fetch all admin data
+function fetchAdminData() {
+fetchSystemStats();
+fetchUsers();
+fetchStorageData();
+fetchLogs();
+}
+
+// Helper function to fetch system stats
+function fetchSystemStats() {
+fetch('/api/admin/stats', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
+    }
+})
+.then(response => {
+    if (response.ok) {
+        return response.json();
+    } else {
+        throw new Error('Failed to fetch system stats');
+    }
+})
+.then(data => {
+    // Update dashboard stats
+    document.getElementById('total-users').textContent = data.usersCount || 0;
+    document.getElementById('active-users').textContent = data.activeUsersCount || 0;
+    document.getElementById('total-files').textContent = data.filesCount || 0;
+    document.getElementById('total-rooms').textContent = data.roomsCount || 0;
+    
+    // Update storage usage
+    const totalStorage = data.totalStorageBytes || 0;
+    const usedStorage = data.usedStorageBytes || 0;
+    const storagePercent = totalStorage > 0 ? (usedStorage / totalStorage * 100).toFixed(1) : 0;
+    
+    document.getElementById('storage-used').textContent = formatFileSize(usedStorage);
+    document.getElementById('storage-total').textContent = formatFileSize(totalStorage);
+    document.getElementById('storage-percent').textContent = storagePercent + '%';
+    document.getElementById('system-storage-bar').style.width = storagePercent + '%';
+})
+.catch(error => {
+    console.error('Error fetching system stats:', error);
+});
+}
+
+// Helper function to fetch users
+function fetchUsers() {
+fetch('/api/admin/users', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
+    }
+})
+.then(response => {
+    if (response.ok) {
+        return response.json();
+    } else {
+        throw new Error('Failed to fetch users');
+    }
+})
+.then(users => {
+    // Clear table
+    const tbody = document.querySelector('#user-management-table tbody');
+    tbody.innerHTML = '';
+    
+    // Add users to table
+    users.forEach(user => {
+        const row = document.createElement('tr');
+        
+        // Username column
+        const usernameCell = document.createElement('td');
+        usernameCell.textContent = user.username;
+        row.appendChild(usernameCell);
+        
+        // Email column
+        const emailCell = document.createElement('td');
+        emailCell.textContent = user.email;
+        row.appendChild(emailCell);
+        
+        // Role column
+        const roleCell = document.createElement('td');
+        roleCell.textContent = user.role.replace('ROLE_', '');
+        row.appendChild(roleCell);
+        
+        // Status column
+        const statusCell = document.createElement('td');
+        const statusBadge = document.createElement('span');
+        statusBadge.className = 'status-badge ' + (user.active ? 'active' : 'inactive');
+        statusBadge.textContent = user.active ? 'Active' : 'Inactive';
+        statusCell.appendChild(statusBadge);
+        row.appendChild(statusCell);
+        
+        // Last login column
+        const lastLoginCell = document.createElement('td');
+        lastLoginCell.textContent = user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never';
+        row.appendChild(lastLoginCell);
+        
+        // Actions column
+        const actionsCell = document.createElement('td');
+        
+        // Edit button
+        const editButton = document.createElement('button');
+        editButton.className = 'action-btn edit';
+        editButton.textContent = 'Edit';
+        editButton.dataset.userId = user.id;
+        editButton.addEventListener('click', function() {
+            // Edit user functionality
+        });
+        actionsCell.appendChild(editButton);
+        
+        // Toggle active button
+        const toggleButton = document.createElement('button');
+        toggleButton.className = 'action-btn ' + (user.active ? 'deactivate' : 'activate');
+        toggleButton.textContent = user.active ? 'Deactivate' : 'Activate';
+        toggleButton.dataset.userId = user.id;
+        toggleButton.addEventListener('click', function() {
+            toggleUserActive(user.id, !user.active);
+        });
+        actionsCell.appendChild(toggleButton);
+        
+        row.appendChild(actionsCell);
+        
+        tbody.appendChild(row);
+    });
+})
+.catch(error => {
+    console.error('Error fetching users:', error);
+});
+}
+
+// Helper function to fetch storage data
+function fetchStorageData() {
+// Fetch storage by user
+fetch('/api/admin/storage/users', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
+    }
+})
+.then(response => {
+    if (response.ok) {
+        return response.json();
+    } else {
+        throw new Error('Failed to fetch storage by user');
+    }
+})
+.then(data => {
+    // Clear table
+    const tbody = document.querySelector('#storage-by-user tbody');
+    tbody.innerHTML = '';
+    
+    // Add users to table
+    data.forEach(item => {
+        const row = document.createElement('tr');
+        
+        // Username column
+        const usernameCell = document.createElement('td');
+        usernameCell.textContent = item.username;
+        row.appendChild(usernameCell);
+        
+        // Files count column
+        const filesCountCell = document.createElement('td');
+        filesCountCell.textContent = item.filesCount;
+        row.appendChild(filesCountCell);
+        
+        // Storage used column
+        const storageUsedCell = document.createElement('td');
+        storageUsedCell.textContent = formatFileSize(item.storageUsed);
+        row.appendChild(storageUsedCell);
+        
+        // Percentage column
+        const percentageCell = document.createElement('td');
+        percentageCell.textContent = item.storagePercent + '%';
+        row.appendChild(percentageCell);
+        
+        // Actions column
+        const actionsCell = document.createElement('td');
+        
+        // View files button
+        const viewFilesButton = document.createElement('button');
+        viewFilesButton.className = 'action-btn';
+        viewFilesButton.textContent = 'View Files';
+        viewFilesButton.dataset.userId = item.userId;
+        actionsCell.appendChild(viewFilesButton);
+        
+        row.appendChild(actionsCell);
+        
+        tbody.appendChild(row);
+    });
+})
+.catch(error => {
+    console.error('Error fetching storage by user:', error);
+});
+
+// Fetch storage by file type
+fetch('/api/admin/storage/types', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
+    }
+})
+.then(response => {
+    if (response.ok) {
+        return response.json();
+    } else {
+        throw new Error('Failed to fetch storage by file type');
+    }
+})
+.then(data => {
+    // Clear table
+    const tbody = document.querySelector('#storage-by-type tbody');
+    tbody.innerHTML = '';
+    
+    // Add file types to table
+    data.forEach(item => {
+        const row = document.createElement('tr');
+        
+        // File type column
+        const fileTypeCell = document.createElement('td');
+        fileTypeCell.textContent = item.fileType;
+        row.appendChild(fileTypeCell);
+        
+        // Files count column
+        const filesCountCell = document.createElement('td');
+        filesCountCell.textContent = item.filesCount;
+        row.appendChild(filesCountCell);
+        
+        // Storage used column
+        const storageUsedCell = document.createElement('td');
+        storageUsedCell.textContent = formatFileSize(item.storageUsed);
+        row.appendChild(storageUsedCell);
+        
+        // Percentage column
+        const percentageCell = document.createElement('td');
+        percentageCell.textContent = item.storagePercent + '%';
+        row.appendChild(percentageCell);
+        
+        tbody.appendChild(row);
+    });
+})
+.catch(error => {
+    console.error('Error fetching storage by file type:', error);
+});
+}
+
+// Helper function to fetch logs
+function fetchLogs() {
+fetch('/api/admin/logs', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
+    }
+})
+.then(response => {
+    if (response.ok) {
+        return response.json();
+    } else {
+        throw new Error('Failed to fetch logs');
+    }
+})
+.then(logs => {
+    // Clear log container
+    const logContainer = document.getElementById('system-logs');
+    logContainer.innerHTML = '';
+    
+    // Add logs
+    logs.forEach(log => {
+        const logEntry = document.createElement('div');
+        logEntry.className = 'log-entry ' + log.level.toLowerCase();
+        logEntry.textContent = `[${log.timestamp}] [${log.level}] ${log.message}`;
+        logContainer.appendChild(logEntry);
+    });
+    
+    // Apply filters
+    filterLogs();
+    
+    // Scroll to bottom
+    logContainer.scrollTop = logContainer.scrollHeight;
+})
+.catch(error => {
+    console.error('Error fetching logs:', error);
+});
+}
+
+// Helper function to toggle user active status
+function toggleUserActive(userId, active) {
+fetch(`/api/admin/users/${userId}/${active ? 'activate' : 'deactivate'}`, {
+    method: 'PUT',
+    headers: {
+        'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
+    }
+})
+.then(response => {
+    if (response.ok) {
+        showNotification(`User ${active ? 'activated' : 'deactivated'} successfully`, 'success');
+        fetchUsers();
+    } else {
+        throw new Error(`Failed to ${active ? 'activate' : 'deactivate'} user`);
+    }
+})
+.catch(error => {
+    showNotification('Error: ' + error.message, 'error');
+});
+}
+
+// Helper function to export logs
+document.getElementById('export-logs-btn').addEventListener('click', function() {
+fetch('/api/admin/logs/export', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
+    }
+})
+.then(response => {
+    if (response.ok) {
+        <!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel - P2P Information Exchange</title>
+<link rel="stylesheet" th:href="@{/css/main.css}">
+<style>
+/* Additional styles for admin panel */
+.admin-container {
+display: flex;
+flex-direction: column;
+gap: 2rem;
+}
+
+.admin-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+
+.admin-stats {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+gap: 1.5rem;
+margin-bottom: 2rem;
+}
+
+.stat-card {
+background-color: var(--card-background);
+border-radius: var(--radius);
+box-shadow: var(--shadow);
+padding: 1.5rem;
+text-align: center;
+}
+
+.stat-value {
+font-size: 2.5rem;
+font-weight: 600;
+color: var(--primary-color);
+margin-bottom: 0.5rem;
+}
+
+.stat-label {
+font-size: 1rem;
+color: var(--text-light);
+}
+
+.admin-tabs {
+display: flex;
+border-bottom: 1px solid var(--border-color);
+margin-bottom: 1.5rem;
+}
+
+.admin-tab {
+padding: 0.75rem 1.5rem;
+cursor: pointer;
+border-bottom: 3px solid transparent;
+transition: var(--transition);
+}
+
+.admin-tab.active {
+border-bottom-color: var(--primary-color);
+color: var(--primary-color);
+font-weight: 500;
+}
+
+.admin-tab-content {
+display: none;
+}
+
+.admin-tab-content.active {
+display: block;
+}
+
+.admin-table {
+width: 100%;
+border-collapse: collapse;
+}
+
+.admin-table th {
+text-align: left;
+padding: 1rem;
+border-bottom: 2px solid var(--border-color);
+font-weight: 600;
+}
+
+.admin-table td {
+padding: 1rem;
+border-bottom: 1px solid var(--border-color);
+}
+
+.status-badge {
+display: inline-block;
+padding: 0.25rem 0.75rem;
+border-radius: 2rem;
+font-size: 0.75rem;
+font-weight: 500;
+}
+
+.status-badge.active {
+background-color: rgba(76, 175, 80, 0.1);
+color: var(--success-color);
+}
+
+.status-badge.inactive {
+background-color: rgba(158, 158, 158, 0.1);
+color: var(--text-light);
+}
+
+.storage-usage {
+height: 8px;
+background-color: rgba(74, 111, 165, 0.1);
+border-radius: var(--radius);
+overflow: hidden;
+margin: 0.5rem 0;
+}
+
+.storage-bar {
+height: 100%;
+background-color: var(--primary-color);
+width: 0%; /* Set dynamically with JS */
+}
+
+.system-section {
+margin-bottom: 2rem;
+}
+
+.log-container {
+background-color: #272822;
+color: #f8f8f2;
+padding: 1rem;
+border-radius: var(--radius);
+font-family: monospace;
+height: 300px;
+overflow-y: auto;
+}
+
+.log-entry {
+margin-bottom: 0.5rem;
+line-height: 1.4;
+}
+
+.log-entry.error {
+color: #f92672;
+}
+
+.log-entry.warning {
+color: #fd971f;
+}
+
+.log-entry.info {
+color: #66d9ef;
+}
+
+.filter-bar {
+display: flex;
+gap: 1rem;
+margin-bottom: 1rem;
+}
+
+.filter-item {
+display: flex;
+align-items: center;
+gap: 0.5rem;
+}
+</style>
+</head>
+<body>
+<header>
+<div class="logo">
+<img th:src="@{/img/logo.png}" alt="P2P Exchange Logo">
+<h1>P2P Information Exchange</h1>
+</div>
+<nav>
+<ul>
+<li><a th:href="@{/dashboard}">Dashboard</a></li>
+<li><a th:href="@{/files}">Files</a></li>
+<li><a th:href="@{/rooms}">Rooms</a></li>
+<li><a th:href="@{/admin}" class="active">Admin</a></li>
+<li><a th:href="@{/profile}">Profile</a></li>
+<li><a th:href="@{/logout}">Logout</a></li>
+</ul>
+</nav>
+</header>
+
+<main>
+<div class="container admin-container">
+<div class="admin-header">
+<h2>Admin Panel</h2>
+<div class="refresh-control">
+    <span>Auto-refresh:</span>
+    <select id="refresh-interval">
+        <option value="0">

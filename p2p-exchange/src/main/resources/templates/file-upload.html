@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload File - P2P Information Exchange</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img th:src="@{/img/logo.png}" alt="P2P Exchange Logo">
+            <h1>P2P Information Exchange</h1>
+        </div>
+        <nav>
+            <ul>
+                <li><a th:href="@{/}">Home</a></li>
+                <li><a th:href="@{/dashboard}">Dashboard</a></li>
+                <li><a th:href="@{/files}" class="active">Files</a></li>
+                <li><a th:href="@{/rooms}">Rooms</a></li>
+                <li><a th:href="@{/profile}">Profile</a></li>
+                <li><a th:href="@{/logout}">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main>
+        <div class="container">
+            <div class="card">
+                <h2>Upload File</h2>
+                
+                <div class="alert alert-error" th:if="${error != null}">
+                    <p th:text="${error}">Error message</p>
+                </div>
+                
+                <form th:action="@{/files/upload}" method="post" enctype="multipart/form-data" id="upload-form">
+                    <div class="form-group">
+                        <label for="file-input">Select File</label>
+                        <input type="file" id="file-input" name="file" required>
+                        <p class="help-text">Maximum file size: 100MB</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="room-select">Share in Room (Optional)</label>
+                        <select id="room-select" name="roomId">
+                            <option value="">-- Select Room --</option>
+                            <option th:each="room : ${rooms}" th:value="${room.id}" th:text="${room.name}"></option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="encryption-type">Encryption Method</label>
+                        <select id="encryption-type" name="encryptionType">
+                            <option value="AES">AES (Default)</option>
+                            <option value="RSA">RSA</option>
+                        </select>
+                        <p class="help-text">AES is faster, RSA is more secure for small files</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="public-share" name="publicShare">
+                            <label for="public-share">Make file publicly accessible (anyone with link can access)</label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="button primary">Upload</button>
+                        <a th:href="@{/files}" class="button secondary">Cancel</a>
+                    </div>
+                </form>
+                
+                <div id="upload-progress" class="progress-container" style="display: none;">
+                    <h3>Uploading File</h3>
+                    <p>Uploading: <span id="file-name"></span></p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <p class="progress-text">0%</p>
+                    <p class="transfer-speed">0 KB/s</p>
+                    
+                    <div class="progress-actions">
+                        <button id="cancel-upload" class="button secondary">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer>
+        <p>&copy; 2025 P2P Information Exchange System. All Rights Reserved.</p>
+    </footer>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadForm = document.getElementById('upload-form');
+            const uploadProgress = document.getElementById('upload-progress');
+            const progressFill = document.querySelector('.progress-fill');
+            const progressText = document.querySelector('.progress-text');
+            const transferSpeed = document.querySelector('.transfer-speed');
+            const fileName = document.getElementById('file-name');
+            const cancelUpload = document.getElementById('cancel-upload');
+            
+            uploadForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const fileInput = document.getElementById('file-input');
+                const roomSelect = document.getElementById('room-select');
+                const encryptionType = document.getElementById('encryption-type');
+                const publicShare = document.getElementById('public-share');
+                
+                if (fileInput.files.length === 0) {
+                    alert('Please select a file to upload.');
+                    return;
+                }
+                
+                const file = fileInput.files[0];
+                
+                // Check file size
+                if (file.size > 100 * 1024 * 1024) { // 100MB
+                    alert('File size exceeds the maximum limit of 100MB.');
+                    return;
+                }
+                
+                fileName.textContent = file.name;
+                
+                // Show progress UI
+                uploadForm.style.display = 'none';
+                uploadProgress.style.display = 'block';
+                
+                // Create form data
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('encryptionType', encryptionType.value);
+                
+                if (roomSelect.value) {
+                    formData.append('roomId', roomSelect.value);
+                }
+                
+                formData.append('publicShare', publicShare.checked);
+                
+                // Upload file
+                const xhr = new XMLHttpRequest();
+                let startTime = new Date().getTime();
+                let lastLoaded = 0;
+                
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        progressFill.style.width = percent + '%';
+                        progressText.textContent = percent + '%';
+                        
+                        // Calculate speed
+                        const currentTime = new Date().getTime();
+                        const elapsedTime = (currentTime - startTime) / 1000; // seconds
+                        
+                        if (elapsedTime > 0) {
+                            const currentSpeed = Math.round((e.loaded - lastLoaded) / elapsedTime);
+                            lastLoaded = e.loaded;
+                            startTime = currentTime;
+                            
+                            transferSpeed.textContent = formatSpeed(currentSpeed);
+                        }
+                    }
+                });
+                
+                xhr.addEventListener('load', function() {
+                    if (xhr.status === 200) {
+                        // Success
+                        progressFill.style.width = '100%';
+                        progressText.textContent = '100%';
+                        
+                        setTimeout(function() {
+                            alert('File uploaded successfully!');
+                            window.location.href = '/files';
+                        }, 500);
+                    } else {
+                        // Error
+                        alert('Error uploading file: ' + xhr.statusText);
+                        uploadForm.style.display = 'block';
+                        uploadProgress.style.display = 'none';
+                    }
+                });
+                
+                xhr.addEventListener('error', function() {
+                    alert('Error uploading file. Please try again.');
+                    uploadForm.style.display = 'block';
+                    uploadProgress.style.display = 'none';
+                });
+                
+                const endpoint = roomSelect.value ? 
+                    '/api/share/upload/' + roomSelect.value :
+                    '/api/files/upload';
+                
+                xhr.open('POST', endpoint, true);
+                xhr.send(formData);
+                
+                // Cancel upload
+                cancelUpload.addEventListener('click', function() {
+                    xhr.abort();
+                    alert('Upload cancelled.');
+                    uploadForm.style.display = 'block';
+                    uploadProgress.style.display = 'none';
+                });
+            });
+            
+            // Helper function to format speed
+            function formatSpeed(bytesPerSecond) {
+                if (bytesPerSecond < 1024) {
+                    return bytesPerSecond + ' B/s';
+                } else if (bytesPerSecond < 1048576) {
+                    return (bytesPerSecond / 1024).toFixed(1) + ' KB/s';
+                } else {
+                    return (bytesPerSecond / 1048576).toFixed(1) + ' MB/s';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

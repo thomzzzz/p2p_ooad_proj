@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - P2P Information Exchange</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img th:src="@{/img/logo.png}" alt="P2P Exchange Logo">
+            <h1>P2P Information Exchange</h1>
+        </div>
+        <nav>
+            <ul>
+                <li><a th:href="@{/}">Home</a></li>
+                <li><a th:href="@{/login}" class="active">Login</a></li>
+                <li><a th:href="@{/register}">Register</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main class="auth-container">
+        <div class="auth-card">
+            <h2>Login to Your Account</h2>
+            
+            <div class="alert alert-success" th:if="${success != null}">
+                <p th:text="${success}">Success message</p>
+            </div>
+            
+            <div class="alert alert-error" th:if="${error != null}">
+                <p th:text="${error}">Error message</p>
+            </div>
+            
+            <form th:action="@{/login}" method="post" id="login-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required autofocus>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                
+                <div class="form-group remember-me">
+                    <input type="checkbox" id="remember-me" name="remember-me">
+                    <label for="remember-me">Remember me</label>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="button primary">Login</button>
+                </div>
+            </form>
+            
+            <div class="auth-links">
+                <p>Don't have an account? <a th:href="@{/register}">Register</a></p>
+                <p><a th:href="@{/forgot-password}">Forgot your password?</a></p>
+            </div>
+        </div>
+    </main>
+    
+    <footer>
+        <p>&copy; 2025 P2P Information Exchange System. All Rights Reserved.</p>
+    </footer>
+    
+    <script>
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('Login failed');
+                }
+            })
+            .then(data => {
+                // Store token in local storage
+                localStorage.setItem('auth_token', data.token);
+                
+                // Redirect to dashboard
+                window.location.href = '/dashboard';
+            })
+            .catch(error => {
+                // Show error message
+                const errorDiv = document.querySelector('.alert-error');
+                if (!errorDiv) {
+                    const newErrorDiv = document.createElement('div');
+                    newErrorDiv.className = 'alert alert-error';
+                    newErrorDiv.innerHTML = '<p>Invalid username or password</p>';
+                    
+                    const form = document.getElementById('login-form');
+                    form.parentNode.insertBefore(newErrorDiv, form);
+                } else {
+                    errorDiv.innerHTML = '<p>Invalid username or password</p>';
+                    errorDiv.style.display = 'block';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

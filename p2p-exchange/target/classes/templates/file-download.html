@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download File - P2P Information Exchange</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img th:src="@{/img/logo.png}" alt="P2P Exchange Logo">
+            <h1>P2P Information Exchange</h1>
+        </div>
+        <nav>
+            <ul>
+                <li><a th:href="@{/}">Home</a></li>
+                <li><a th:href="@{/dashboard}">Dashboard</a></li>
+                <li><a th:href="@{/files}" class="active">Files</a></li>
+                <li><a th:href="@{/rooms}">Rooms</a></li>
+                <li><a th:href="@{/profile}">Profile</a></li>
+                <li><a th:href="@{/logout}">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main>
+        <div class="container">
+            <div class="card file-details-card">
+                <h2>File Details</h2>
+                
+                <div class="file-preview">
+                    <div class="file-icon" th:data-type="${file.fileType}">
+                        <!-- File type icon will be set by CSS based on data-type -->
+                    </div>
+                    <h3 th:text="${file.filename}">filename.txt</h3>
+                </div>
+                
+                <div class="file-metadata">
+                    <div class="metadata-item">
+                        <span class="metadata-label">File Size:</span>
+                        <span class="metadata-value" th:text="${file.size}">2.5 MB</span>
+                    </div>
+                    <div class="metadata-item">
+                        <span class="metadata-label">File Type:</span>
+                        <span class="metadata-value" th:text="${file.fileType}">text/plain</span>
+                    </div>
+                    <div class="metadata-item">
+                        <span class="metadata-label">Uploaded By:</span>
+                        <span class="metadata-value" th:text="${file.ownerName}">Username</span>
+                    </div>
+                    <div class="metadata-item">
+                        <span class="metadata-label">Upload Date:</span>
+                        <span class="metadata-value" th:text="${#dates.format(file.uploadDate, 'MMM d, yyyy h:mm a')}">Jun 3, 2025 2:30 PM</span>
+                    </div>
+                    <div class="metadata-item">
+                        <span class="metadata-label">Encryption:</span>
+                        <span class="metadata-value" th:text="${file.encryptionType}">AES</span>
+                    </div>
+                </div>
+                
+                <div class="file-actions">
+                    <button id="download-btn" class="button primary" th:data-id="${file.id}">Download File</button>
+                    <a th:href="@{/files}" class="button secondary">Back to Files</a>
+                    
+                    <!-- Share Link section (only visible to owner) -->
+                    <div class="share-section" th:if="${isOwner}">
+                        <h3>Share File</h3>
+                        <div class="share-link-group">
+                            <input type="text" id="share-link" th:value="${shareLink}" readonly>
+                            <button id="copy-link-btn" class="button">Copy Link</button>
+                        </div>
+                        <div class="share-options">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="public-share" name="publicShare" th:checked="${file.isPublic}">
+                                <label for="public-share">Make file publicly accessible (anyone with link can access)</label>
+                            </div>
+                            <button id="update-share-btn" class="button secondary">Update Sharing</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Download Progress Modal -->
+            <div id="download-modal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h3>Downloading File</h3>
+                    <div id="download-progress" class="progress-container">
+                        <p>Downloading: <span id="download-file-name" th:text="${file.filename}">filename.txt</span></p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 0%"></div>
+                        </div>
+                        <p class="progress-text">0%</p>
+                        <p class="transfer-speed">0 KB/s</p>
+                        <p class="estimated-time">Estimated time remaining: Calculating...</p>
+                        
+                        <div class="progress-actions">
+                            <button id="cancel-download" class="button secondary">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer>
+        <p>&copy; 2025 P2P Information Exchange System. All Rights Reserved.</p>
+    </footer>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const downloadBtn = document.getElementById('download-btn');
+            const downloadModal = document.getElementById('download-modal');
+            const closeBtn = document.querySelector('.close');
+            const progressFill = document.querySelector('.progress-fill');
+            const progressText = document.querySelector('.progress-text');
+            const transferSpeed = document.querySelector('.transfer-speed');
+            const estimatedTime = document.querySelector('.estimated-time');
+            const cancelDownload = document.getElementById('cancel-download');
+            
+            // Copy link functionality
+            const copyLinkBtn = document.getElementById('copy-link-btn');
+            if (copyLinkBtn) {
+                copyLinkBtn.addEventListener('click', function() {
+                    const shareLink = document.getElementById('share-link');
+                    shareLink.select();
+                    document.execCommand('copy');
+                    
+                    // Show copied message
+                    copyLinkBtn.textContent = 'Copied!';
+                    setTimeout(function() {
+                        copyLinkBtn.textContent = 'Copy Link';
+                    }, 2000);
+                });
+            }
+            
+            // Update sharing options
+            const updateShareBtn = document.getElementById('update-share-btn');
+            if (updateShareBtn) {
+                updateShareBtn.addEventListener('click', function() {
+                    const publicShare = document.getElementById('public-share').checked;
+                    const fileId = downloadBtn.dataset.id;
+                    
+                    fetch('/api/files/' + fileId + '/share', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
+                        },
+                        body: JSON.stringify({
+                            publicShare: publicShare
+                        })
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            return response.json();
+                        } else {
+                            throw new Error('Failed to update sharing options');
+                        }
+                    })
+                    .then(data => {
+                        // Update share link if it changed
+                        if (data.shareLink) {
+                            document.getElementById('share-link').value = data.shareLink;
+                        }
+                        
+                        showNotification('Sharing options updated successfully', 'success');
+                    })
+                    .catch(error => {
+                        showNotification('Error: ' + error.message, 'error');
+                    });
+                });
+            }
+            
+            // Download functionality
+            downloadBtn.addEventListener('click', function() {
+                const fileId = this.dataset.id;
+                downloadModal.style.display = 'block';
+                
+                // Initialize download
+                fetch('/api/share/initDownload/' + fileId, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error('Failed to initialize download');
+                    }
+                })
+                .then(data => {
+                    const transferId = data.transferId;
+                    
+                    // Start actual download
+                    window.location.href = '/api/share/download/' + fileId;
+                    
+                    // Track progress in background
+                    trackDownloadProgress(transferId);
+                })
+                .catch(error => {
+                    showNotification('Error: ' + error.message, 'error');
+                    downloadModal.style.display = 'none';
+                });
+            });
+            
+            // Close modal when clicking X
+            closeBtn.addEventListener('click', function() {
+                downloadModal.style.display = 'none';
+            });
+            
+            // Close modal when clicking outside
+            window.addEventListener('click', function(e) {
+                if (e.target == downloadModal) {
+                    downloadModal.style.display = 'none';
+                }
+            });
+            
+            // Track download progress
+            function trackDownloadProgress(transferId) {
+                let progressInterval;
+                let startTime = new Date().getTime();
+                let lastPercent = 0;
+                
+                // Set up the interval to check progress
+                progressInterval = setInterval(function() {
+                    fetch('/api/share/progress/' + transferId, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
+                        }
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            return response.json();
+                        } else {
+                            throw new Error('Failed to get progress');
+                        }
+                    })
+                    .then(data => {
+                        const percent = Math.round(data.completionPercentage);
+                        progressFill.style.width = percent + '%';
+                        progressText.textContent = percent + '%';
+                        
+                        // Update transfer speed
+                        if (data.transferRate) {
+                            transferSpeed.textContent = formatSpeed(data.transferRate);
+                        }
+                        
+                        // Calculate estimated time remaining
+                        if (percent > lastPercent) {
+                            const currentTime = new Date().getTime();
+                            const elapsedSeconds = (currentTime - startTime) / 1000;
+                            const percentPerSecond = (percent - lastPercent) / elapsedSeconds;
+                            
+                            if (percentPerSecond > 0) {
+                                const remainingPercent = 100 - percent;
+                                const remainingSeconds = Math.round(remainingPercent / percentPerSecond);
+                                
+                                estimatedTime.textContent = 'Estimated time remaining: ' + formatTime(remainingSeconds);
+                            }
+                            
+                            lastPercent = percent;
+                            startTime = currentTime;
+                        }
+                        
+                        // Check if download is complete
+                        if (percent >= 100 || data.state === 'COMPLETED') {
+                            clearInterval(progressInterval);
+                            progressFill.style.width = '100%';
+                            progressText.textContent = '100%';
+                            transferSpeed.textContent = '0 B/s';
+                            estimatedTime.textContent = 'Download complete!';
+                            
+                            // Close modal after a delay
+                            setTimeout(function() {
+                                downloadModal.style.display = 'none';
+                            }, 2000);
+                        }
+                        
+                        // Check if download failed or was cancelled
+                        if (data.state === 'FAILED' || data.state === 'CANCELLED') {
+                            clearInterval(progressInterval);
+                            estimatedTime.textContent = data.state === 'FAILED' ? 'Download failed!' : 'Download cancelled!';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error tracking progress:', error);
+                    });
+                }, 1000);
+                
+                // Cancel download button
+                cancelDownload.addEventListener('click', function() {
+                    fetch('/api/share/cancel/' + transferId, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
+                        }
+                    })
+                    .then(() => {
+                        clearInterval(progressInterval);
+                        downloadModal.style.display = 'none';
+                    })
+                    .catch(error => {
+                        console.error('Error cancelling download:', error);
+                    });
+                });
+            }
+            
+            // Helper function to format speed
+            function formatSpeed(bytesPerSecond) {
+                if (bytesPerSecond < 1024) {
+                    return bytesPerSecond + ' B/s';
+                } else if (bytesPerSecond < 1048576) {
+                    return (bytesPerSecond / 1024).toFixed(1) + ' KB/s';
+                } else {
+                    return (bytesPerSecond / 1048576).toFixed(1) + ' MB/s';
+                }
+            }
+            
+            // Helper function to format time
+            function formatTime(seconds) {
+                if (seconds < 60) {
+                    return seconds + ' second' + (seconds !== 1 ? 's' : '');
+                } else if (seconds < 3600) {
+                    const minutes = Math.floor(seconds / 60);
+                    const remainingSeconds = seconds % 60;
+                    return minutes + ' minute' + (minutes !== 1 ? 's' : '') + (remainingSeconds > 0 ? ' ' + remainingSeconds + ' second' + (remainingSeconds !== 1 ? 's' : '') : '');
+                } else {
+                    const hours = Math.floor(seconds / 3600);
+                    const minutes = Math.floor((seconds % 3600) / 60);
+                    return hours + ' hour' + (hours !== 1 ? 's' : '') + (minutes > 0 ? ' ' + minutes + ' minute' + (minutes !== 1 ? 's' : '') : '');
+                }
+            }
+            
+            // Helper function to show notifications
+            function showNotification(message, type) {
+                // Check if notifications container exists, create if not
+                let notificationsContainer = document.getElementById('notifications-container');
+                if (!notificationsContainer) {
+                    notificationsContainer = document.createElement('div');
+                    notificationsContainer.id = 'notifications-container';
+                    document.body.appendChild(notificationsContainer);
+                }
+                
+                // Create notification element
+                const notification = document.createElement('div');
+                notification.className = 'notification ' + (type || '');
+                notification.textContent = message;
+                
+                // Add to container
+                notificationsContainer.appendChild(notification);
+                
+                // Auto-remove after delay
+                setTimeout(() => {
+                    notification.classList.add('fade-out');
+                    setTimeout(() => {
+                        notificationsContainer.removeChild(notification);
+                    }, 500);
+                }, 5000);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - P2P Information Exchange</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img th:src="@{/img/logo.png}" alt="P2P Exchange Logo">
+            <h1>P2P Information Exchange</h1>
+        </div>
+        <nav>
+            <ul>
+                <li><a th:href="@{/}">Home</a></li>
+                <li><a th:href="@{/login}">Login</a></li>
+                <li><a th:href="@{/register}" class="active">Register</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main class="auth-container">
+        <div class="auth-card">
+            <h2>Create a New Account</h2>
+            
+            <div class="alert alert-error" th:if="${error != null}">
+                <p th:text="${error}">Error message</p>
+            </div>
+            
+            <form th:action="@{/register}" method="post" th:object="${user}" id="register-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" th:field="*{username}" required autofocus>
+                    <span class="error-message" id="username-error"></span>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" th:field="*{email}" required>
+                    <span class="error-message" id="email-error"></span>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" th:field="*{passwordHash}" required>
+                    <span class="error-message" id="password-error"></span>
+                    <p class="password-hint">Password must be at least 8 characters long, include uppercase and lowercase letters, numbers, and special characters.</p>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirm-password">Confirm Password</label>
+                    <input type="password" id="confirm-password" name="confirmPassword" required>
+                    <span class="error-message" id="confirm-password-error"></span>
+                </div>
+                
+                <div class="form-group">
+                    <div class="terms-checkbox">
+                        <input type="checkbox" id="terms" name="terms" required>
+                        <label for="terms">I agree to the <a href="#" id="terms-link">Terms and Conditions</a></label>
+                    </div>
+                    <span class="error-message" id="terms-error"></span>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="button primary">Register</button>
+                </div>
+            </form>
+            
+            <div class="auth-links">
+                <p>Already have an account? <a th:href="@{/login}">Login</a></p>
+            </div>
+        </div>
+    </main>
+    
+    <footer>
+        <p>&copy; 2025 P2P Information Exchange System. All Rights Reserved.</p>
+    </footer>
+    
+    <!-- Terms Modal -->
+    <div id="terms-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>Terms and Conditions</h3>
+            <div class="terms-content">
+                <p>Welcome to the P2P Information Exchange System. By using our service, you agree to the following terms and conditions:</p>
+                
+                <h4>1. User Responsibilities</h4>
+                <p>Users are responsible for the content they share on this platform. You agree not to share illegal or copyrighted content without proper authorization.</p>
+                
+                <h4>2. Privacy</h4>
+                <p>We take your privacy seriously. All shared files are encrypted, but we cannot guarantee absolute security. Please see our Privacy Policy for more information.</p>
+                
+                <h4>3. File Sharing</h4>
+                <p>This platform is designed for secure peer-to-peer file sharing. Files are transferred directly between users and we do not maintain copies of your files on our servers.</p>
+                
+                <h4>4. Account Security</h4>
+                <p>You are responsible for maintaining the security of your account. Do not share your credentials with others.</p>
+                
+                <h4>5. Service Limitations</h4>
+                <p>There may be limitations on file size, storage, and other aspects of the service. These limitations may change over time.</p>
+                
+                <h4>6. Termination</h4>
+                <p>We reserve the right to terminate or suspend accounts that violate these terms or engage in illegal activities.</p>
+            </div>
+            <div class="modal-actions">
+                <button id="accept-terms" class="button primary">I Accept</button>
+                <button id="decline-terms" class="button secondary">I Decline</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Form validation
+        document.getElementById('register-form').addEventListener('submit', function(e) {
+            let valid = true;
+            
+            // Username validation
+            const username = document.getElementById('username').value;
+            if (username.length < 3) {
+                document.getElementById('username-error').textContent = 'Username must be at least 3 characters long';
+                valid = false;
+            } else {
+                document.getElementById('username-error').textContent = '';
+            }
+            
+            // Email validation
+            const email = document.getElementById('email').value;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                document.getElementById('email-error').textContent = 'Please enter a valid email address';
+                valid = false;
+            } else {
+                document.getElementById('email-error').textContent = '';
+            }
+            
+            // Password validation
+            const password = document.getElementById('password').value;
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            if (!passwordRegex.test(password)) {
+                document.getElementById('password-error').textContent = 'Password does not meet requirements';
+                valid = false;
+            } else {
+                document.getElementById('password-error').textContent = '';
+            }
+            
+            // Confirm password validation
+            const confirmPassword = document.getElementById('confirm-password').value;
+            if (password !== confirmPassword) {
+                document.getElementById('confirm-password-error').textContent = 'Passwords do not match';
+                valid = false;
+            } else {
+                document.getElementById('confirm-password-error').textContent = '';
+            }
+            
+            // Terms validation
+            const terms = document.getElementById('terms').checked;
+            if (!terms) {
+                document.getElementById('terms-error').textContent = 'You must agree to the terms and conditions';
+                valid = false;
+            } else {
+                document.getElementById('terms-error').textContent = '';
+            }
+            
+            if (!valid) {
+                e.preventDefault();
+            }
+        });
+        
+        // Terms modal
+        const modal = document.getElementById('terms-modal');
+        const termsLink = document.getElementById('terms-link');
+        const closeBtn = document.querySelector('.close');
+        const acceptBtn = document.getElementById('accept-terms');
+        const declineBtn = document.getElementById('decline-terms');
+        
+        termsLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            modal.style.display = 'block';
+        });
+        
+        closeBtn.addEventListener('click', function() {
+            modal.style.display = 'none';
+        });
+        
+        acceptBtn.addEventListener('click', function() {
+            document.getElementById('terms').checked = true;
+            document.getElementById('terms-error').textContent = '';
+            modal.style.display = 'none';
+        });
+        
+        declineBtn.addEventListener('click', function() {
+            document.getElementById('terms').checked = false;
+            modal.style.display = 'none';
+        });
+        
+        window.addEventListener('click', function(e) {
+            if (e.target == modal) {
+                modal.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
