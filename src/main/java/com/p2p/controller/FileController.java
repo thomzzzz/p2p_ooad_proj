@@ -3,6 +3,8 @@ package com.p2p.controller;
 import com.p2p.model.File;
 import com.p2p.model.User;
 import com.p2p.service.FileService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -24,7 +26,7 @@ import java.util.Map;
 @RequestMapping("/api/files")
 public class FileController {
 
-    // Removed 'final' modifier
+    private static final Logger logger = LoggerFactory.getLogger(FileController.class);
     private FileService fileService;
     
     @Autowired
@@ -38,12 +40,27 @@ public class FileController {
             @RequestParam(value = "encrypt", defaultValue = "false") boolean encrypt,
             @AuthenticationPrincipal User user) throws IOException {
         
-        File uploadedFile = fileService.storeFile(file, user.getId(), encrypt);
-        return ResponseEntity.ok(uploadedFile);
+        logger.debug("Uploading file: {}, encrypt: {}, user: {}", 
+                file.getOriginalFilename(), encrypt, user.getUsername());
+                
+        if (file.isEmpty()) {
+            logger.error("Upload failed: File is empty");
+            return ResponseEntity.badRequest().build();
+        }
+        
+        try {
+            File uploadedFile = fileService.storeFile(file, user.getId(), encrypt);
+            logger.debug("File uploaded successfully. ID: {}", uploadedFile.getId());
+            return ResponseEntity.ok(uploadedFile);
+        } catch (Exception e) {
+            logger.error("Error uploading file", e);
+            throw e;
+        }
     }
     
     @GetMapping
     public ResponseEntity<List<File>> getMyFiles(@AuthenticationPrincipal User user) {
+        logger.debug("Getting files for user: {}", user.getUsername());
         List<File> files = fileService.getFilesByOwnerId(user.getId());
         return ResponseEntity.ok(files);
     }
@@ -52,38 +69,62 @@ public class FileController {
     public ResponseEntity<Resource> downloadFile(@PathVariable String fileId, 
             @RequestParam(value = "decryptionKey", required = false) String decryptionKey) throws IOException {
         
-        java.io.File file = fileService.getFile(fileId);
-        Path path = Paths.get(file.getAbsolutePath());
-        ByteArrayResource resource;
+        logger.debug("Downloading file: {}", fileId);
         
-        byte[] fileData = Files.readAllBytes(path);
-        
-        // If decryption key is provided, decrypt the file
-        if (decryptionKey != null && !decryptionKey.isEmpty()) {
-            fileData = fileService.decryptFile(fileData, decryptionKey);
+        try {
+            java.io.File file = fileService.getFile(fileId);
+            if (!file.exists()) {
+                logger.error("File not found on disk: {}", file.getAbsolutePath());
+                return ResponseEntity.notFound().build();
+            }
+            
+            Path path = Paths.get(file.getAbsolutePath());
+            ByteArrayResource resource;
+            
+            byte[] fileData = Files.readAllBytes(path);
+            
+            // If decryption key is provided, decrypt the file
+            if (decryptionKey != null && !decryptionKey.isEmpty()) {
+                logger.debug("Decrypting file with provided key");
+                fileData = fileService.decryptFile(fileData, decryptionKey);
+            }
+            
+            resource = new ByteArrayResource(fileData);
+            
+            // Get file metadata
+            File fileMetadata = fileService.getFileById(fileId);
+            
+            if (fileMetadata == null) {
+                logger.error("File metadata not found for ID: {}", fileId);
+                return ResponseEntity.notFound().build();
+            }
+            
+            logger.debug("Serving file: {}, type: {}", fileMetadata.getOriginalFilename(), fileMetadata.getFileType());
+            
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(fileMetadata.getFileType()))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileMetadata.getOriginalFilename() + "\"")
+                    .body(resource);
+        } catch (Exception e) {
+            logger.error("Error downloading file", e);
+            throw e;
         }
-        
-        resource = new ByteArrayResource(fileData);
-        
-        // Get file metadata
-        File fileMetadata = fileService.getFilesByOwnerId(null).stream()
-                .filter(f -> f.getId().equals(fileId))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("File not found"));
-        
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(fileMetadata.getFileType()))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileMetadata.getOriginalFilename() + "\"")
-                .body(resource);
     }
     
     @DeleteMapping("/{fileId}")
     public ResponseEntity<?> deleteFile(@PathVariable String fileId, @AuthenticationPrincipal User user) {
+        logger.debug("Deleting file: {}", fileId);
+        
         // Check if user owns the file
         File file = fileService.getFilesByOwnerId(user.getId()).stream()
                 .filter(f -> f.getId().equals(fileId))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("File not found or you don't have permission"));
+                .orElse(null);
+                
+        if (file == null) {
+            logger.error("File not found or user doesn't have permission");
+            return ResponseEntity.notFound().build();
+        }
         
         fileService.deleteFile(fileId);
         return ResponseEntity.ok().build();
@@ -92,6 +133,7 @@ public class FileController {
     @PostMapping("/{fileId}/decrypt")
     public ResponseEntity<?> decryptFile(@PathVariable String fileId, @RequestBody Map<String, String> request) {
         String key = request.get("decryptionKey");
+        logger.debug("Decryption requested for file: {}", fileId);
         // This would normally return the decrypted file or a status
         // For now, we just return a success message
         return ResponseEntity.ok().body("File decryption initiated");

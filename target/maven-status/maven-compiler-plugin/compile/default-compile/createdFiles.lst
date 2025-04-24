@@ -19,6 +19,7 @@ com\p2p\repository\FileRepository.class
 com\p2p\controller\ViewController.class
 com\p2p\service\RoomService.class
 com\p2p\model\Peer.class
+com\p2p\controller\DebugController.class
 com\p2p\model\Room.class
 com\p2p\model\File.class
 com\p2p\repository\UserRepository.class

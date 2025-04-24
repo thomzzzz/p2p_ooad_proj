@@ -10,12 +10,13 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/rooms")
 public class RoomController {
 
-    // Removed 'final' modifier
     private RoomService roomService;
     
     @Autowired
@@ -46,6 +47,58 @@ public class RoomController {
     @GetMapping("/link/{link}")
     public ResponseEntity<Room> getRoomByLink(@PathVariable String link) {
         Room room = roomService.getRoomByLink(link);
+        return ResponseEntity.ok(room);
+    }
+    
+    // Debug endpoint
+    @GetMapping("/debug/members/{roomId}")
+    public ResponseEntity<?> debugRoomMembers(@PathVariable String roomId) {
+        try {
+            Room room = roomService.getRoomById(roomId);
+            Map<String, Object> response = new HashMap<>();
+            response.put("roomId", room.getId());
+            response.put("roomName", room.getName());
+            response.put("roomLink", room.getRoomLink());
+            response.put("creatorId", room.getCreatorId());
+            response.put("memberCount", room.getMembers().size());
+            response.put("members", room.getMembers());
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/debug/user-rooms/{userId}")
+    public ResponseEntity<?> debugUserRooms(@PathVariable String userId) {
+        try {
+            List<Room> rooms = roomService.getRoomsForUser(userId);
+            Map<String, Object> response = new HashMap<>();
+            response.put("userId", userId);
+            response.put("roomCount", rooms.size());
+            
+            List<Map<String, Object>> roomDetails = new ArrayList<>();
+            for (Room room : rooms) {
+                Map<String, Object> details = new HashMap<>();
+                details.put("roomId", room.getId());
+                details.put("roomName", room.getName());
+                details.put("memberCount", room.getMembers().size());
+                details.put("isCreator", room.getCreatorId().equals(userId));
+                roomDetails.add(details);
+            }
+            
+            response.put("rooms", roomDetails);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+        }
+    }
+    
+    // NEW ENDPOINT: Join room by link
+    @PostMapping("/join/{link}")
+    public ResponseEntity<Room> joinRoomByLink(@PathVariable String link, 
+                                              @AuthenticationPrincipal User user) {
+        Room room = roomService.joinRoomByLink(link, user.getId());
         return ResponseEntity.ok(room);
     }
     

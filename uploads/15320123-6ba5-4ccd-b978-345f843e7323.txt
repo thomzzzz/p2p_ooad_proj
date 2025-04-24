@@ -1,0 +1,3 @@
+project idea : Automated Evaluation and Visualization of Rehabilitation Exercises Using Body Pose Landmarks and Features Focusing On Tennis Elbow
+
+implementation : video of hand motion for each rehab exercise is passed through mediapipe to extract landmarks for shoulder, elbow, wrist and the rest of the hand, which are then mapped into a csv as well as formatted into data for an lstm to create a training set for a classifier. the video is then augmented with these points to show the mapping of these points on the hand.

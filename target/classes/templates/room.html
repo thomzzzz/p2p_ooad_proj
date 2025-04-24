@@ -246,6 +246,13 @@
     <script>
         // Get room ID from URL
         const roomId = window.location.pathname.split('/').pop();
+        let roomLink = null;
+        
+        // Check URL for room link
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('link')) {
+            roomLink = urlParams.get('link');
+        }
         
         // Check if token exists, redirect to login if not
         const token = localStorage.getItem('token');
@@ -357,6 +364,28 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
         
+        // Join room by link
+        async function joinRoom(roomId, roomLink) {
+            try {
+                // First try to join the room
+                const joinResponse = await fetch(`/api/rooms/join/${roomLink}`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+                
+                if (joinResponse.ok) {
+                    console.log('Successfully joined room');
+                    return true;
+                } else {
+                    console.error('Failed to join room');
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error joining room:', error);
+                return false;
+            }
+        }
+        
         // Load room details
         async function loadRoomDetails() {
             try {
@@ -370,7 +399,7 @@
                     document.title = `P2P File Sharing - ${room.name}`;
                     
                     // Get room link
-                    document.getElementById('room-link').value = window.location.origin + '/room/' + roomId;
+                    document.getElementById('room-link').value = window.location.href;
                     
                     // Load files
                     loadFiles();
@@ -506,53 +535,58 @@
             }
         }
         
-        // Initialize the page
-        async function initialize() {
-            await fetchCurrentUser();
-            await loadRoomDetails();
-            connect();
+        // Generate new room link
+        function generateNewRoomLink() {
+            fetch(`/api/rooms/${roomId}/generate-link`, {
+                method: 'POST',
+                headers: getAuthHeaders()
+            })
+            .then(response => response.json())
+            .then(data => {
+                const newLink = `${window.location.origin}/room/${roomId}?link=${data.link}`;
+                document.getElementById('room-link').value = newLink;
+                alert('New room link generated!');
+            })
+            .catch(error => {
+                console.error('Error generating new room link:', error);
+                alert('Error generating new room link. Please try again.');
+            });
+        }
+        
+        // Copy room link to clipboard
+        function copyRoomLink() {
+            const roomLink = document.getElementById('room-link');
+            roomLink.select();
+            document.execCommand('copy');
+            alert('Link copied to clipboard!');
+        }
+        
+        // Invite user to room
+        async function inviteUser() {
+            const userId = document.getElementById('user-id').value.trim();
             
-            // Set up event listeners
-            document.getElementById('send-message-btn').addEventListener('click', sendMessage);
-            document.getElementById('message-input').addEventListener('keypress', e => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    sendMessage();
+            if (!userId) {
+                alert('Please enter a user ID.');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/rooms/${roomId}/members`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ userId })
+                });
+                
+                if (response.ok) {
+                    alert('User invited!');
+                    bootstrap.Modal.getInstance(document.getElementById('inviteModal')).hide();
+                } else {
+                    throw new Error('Failed to invite user');
                 }
-            });
-            
-            document.getElementById('uploadFileBtn').addEventListener('click', () => {
-                const uploadModal = new bootstrap.Modal(document.getElementById('uploadModal'));
-                uploadModal.show();
-            });
-            
-            document.getElementById('uploadSubmitBtn').addEventListener('click', uploadFile);
-            
-            document.getElementById('shareRoomBtn').addEventListener('click', () => {
-                const shareRoomModal = new bootstrap.Modal(document.getElementById('shareRoomModal'));
-                shareRoomModal.show();
-            });
-            
-            document.getElementById('copy-link-btn').addEventListener('click', () => {
-                const roomLink = document.getElementById('room-link');
-                roomLink.select();
-                document.execCommand('copy');
-                alert('Link copied to clipboard!');
-            });
-            
-            document.getElementById('generate-new-link-btn').addEventListener('click', generateNewRoomLink);
-            
-            document.getElementById('inviteBtn').addEventListener('click', () => {
-                const inviteModal = new bootstrap.Modal(document.getElementById('inviteModal'));
-                inviteModal.show();
-            });
-            
-            document.getElementById('invite-user-btn').addEventListener('click', inviteUser);
-            
-            document.getElementById('leaveRoomBtn').addEventListener('click', leaveRoom);
-            
-            // Handle window close
-            window.addEventListener('beforeunload', disconnect);
+            } catch (error) {
+                console.error('Error inviting user:', error);
+                alert('Error inviting user. Please check the user ID and try again.');
+            }
         }
         
         // Upload file to the room
@@ -620,52 +654,6 @@
             }
         }
         
-        // Generate new room link
-        async function generateNewRoomLink() {
-            try {
-                const response = await fetch(`/api/rooms/${roomId}/generate-link`, {
-                    method: 'POST',
-                    headers: getAuthHeaders()
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    document.getElementById('room-link').value = window.location.origin + '/room/' + data.link;
-                    alert('New room link generated!');
-                }
-            } catch (error) {
-                console.error('Error generating new room link:', error);
-            }
-        }
-        
-        // Invite user to room
-        async function inviteUser() {
-            const userId = document.getElementById('user-id').value.trim();
-            
-            if (!userId) {
-                alert('Please enter a user ID.');
-                return;
-            }
-            
-            try {
-                const response = await fetch(`/api/rooms/${roomId}/members`, {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ userId })
-                });
-                
-                if (response.ok) {
-                    alert('User invited!');
-                    bootstrap.Modal.getInstance(document.getElementById('inviteModal')).hide();
-                } else {
-                    throw new Error('Failed to invite user');
-                }
-            } catch (error) {
-                console.error('Error inviting user:', error);
-                alert('Error inviting user. Please check the user ID and try again.');
-            }
-        }
-        
         // Leave room
         function leaveRoom() {
             if (confirm('Are you sure you want to leave this room?')) {
@@ -675,6 +663,62 @@
                 // Redirect to dashboard
                 window.location.href = '/dashboard';
             }
+        }
+        
+        // Initialize the page
+        async function initialize() {
+            await fetchCurrentUser();
+            
+            // If we have a link, try to join the room
+            if (roomLink) {
+                const joined = await joinRoom(roomId, roomLink);
+                if (!joined) {
+                    alert('Failed to join room. You may not have permission.');
+                    window.location.href = '/dashboard';
+                    return;
+                }
+            }
+            
+            // Continue with normal initialization
+            await loadRoomDetails();
+            connect();
+            
+            // Set up event listeners
+            document.getElementById('send-message-btn').addEventListener('click', sendMessage);
+            document.getElementById('message-input').addEventListener('keypress', e => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            document.getElementById('uploadFileBtn').addEventListener('click', () => {
+                const uploadModal = new bootstrap.Modal(document.getElementById('uploadModal'));
+                uploadModal.show();
+            });
+            
+            document.getElementById('uploadSubmitBtn').addEventListener('click', uploadFile);
+            
+            document.getElementById('shareRoomBtn').addEventListener('click', () => {
+                const shareRoomModal = new bootstrap.Modal(document.getElementById('shareRoomModal'));
+                shareRoomModal.show();
+            });
+            
+            document.getElementById('copy-link-btn').addEventListener('click', copyRoomLink);
+            
+            document.getElementById('generate-new-link-btn').addEventListener('click', generateNewRoomLink);
+            
+            document.getElementById('inviteBtn').addEventListener('click', () => {
+                const inviteModal = new bootstrap.Modal(document.getElementById('inviteModal'));
+                inviteModal.show();
+            });
+            
+            document.getElementById('invite-user-btn').addEventListener('click', inviteUser);
+            
+            document.getElementById('leaveRoomBtn').addEventListener('click', leaveRoom);
+            
+            // Handle window close
+            window.addEventListener('beforeunload', disconnect);
         }
         
         // Initialize the page when loaded

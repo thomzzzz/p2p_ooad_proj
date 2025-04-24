@@ -40,14 +40,32 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http.csrf().disable()
             .authorizeRequests()
+            // Public endpoints
             .antMatchers("/api/auth/**").permitAll()
             .antMatchers("/api/public/**").permitAll()
-            .antMatchers("/", "/login", "/dashboard", "/room/**").permitAll()
+            .antMatchers("/").permitAll()
+            .antMatchers("/login").permitAll()
+            .antMatchers("/dashboard").permitAll()
+            .antMatchers("/room/**").permitAll()
+            
+            // Static resources
+            .antMatchers("/css/**", "/js/**", "/images/**").permitAll()
+            .antMatchers("/h2-console/**").permitAll()
             .antMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+            
+            // IMPORTANT: Allow file download endpoints
+            .antMatchers("/api/files/{fileId}").permitAll()
+            .antMatchers("/uploads/**").permitAll()
+            
+            // Debug endpoints
+            .antMatchers("/api/rooms/debug/**").permitAll()
+            
+            // All other endpoints require authentication
             .anyRequest().authenticated()
             .and()
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
             
+        // Add JWT filter
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         
         // For development
