@@ -591,68 +591,89 @@
         
         // Upload file to the room
         async function uploadFile() {
-            const fileInput = document.getElementById('file');
-            const encrypt = document.getElementById('encrypt').checked;
-            
-            if (!fileInput.files[0]) {
-                alert('Please select a file to upload.');
-                return;
-            }
-            
-            const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
-            formData.append('encrypt', encrypt);
-            
-            // Show progress bar
-            const progressBar = document.querySelector('.progress');
-            const progressBarInner = document.querySelector('.progress-bar');
-            progressBar.classList.remove('d-none');
-            
-            try {
-                // Upload file
-                const uploadResponse = await fetch('/api/files/upload', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: formData
-                });
-                
-                if (uploadResponse.ok) {
-                    const fileData = await uploadResponse.json();
-                    
-                    // Add file to room
-                    await fetch(`/api/rooms/${roomId}/files`, {
-                        method: 'POST',
-                        headers: getAuthHeaders(),
-                        body: JSON.stringify({ fileId: fileData.id })
-                    });
-                    
-                    // Notify others
-                    stompClient.send(`/app/room.file/${roomId}`, 
-                        {'Authorization': `Bearer ${token}`}, 
-                        JSON.stringify({type: 'FILE', content: fileData.id})
-                    );
-                    
-                    // Hide modal
-                    bootstrap.Modal.getInstance(document.getElementById('uploadModal')).hide();
-                    
-                    // Reset form
-                    document.getElementById('uploadForm').reset();
-                    progressBar.classList.add('d-none');
-                    progressBarInner.style.width = '0%';
-                    
-                    // Reload files
-                    loadFiles();
-                } else {
-                    throw new Error('Upload failed');
-                }
-            } catch (error) {
-                console.error('Error uploading file:', error);
-                alert('Error uploading file. Please try again.');
-                progressBar.classList.add('d-none');
-            }
+    const fileInput = document.getElementById('file');
+    const encrypt = document.getElementById('encrypt').checked;
+    
+    if (!fileInput.files[0]) {
+        alert('Please select a file to upload.');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    formData.append('encrypt', encrypt);
+    
+    // Show progress bar
+    const progressBar = document.querySelector('.progress');
+    const progressBarInner = document.querySelector('.progress-bar');
+    progressBar.classList.remove('d-none');
+    
+    try {
+        console.log("Uploading file to server...");
+        
+        // Step 1: Upload file to user's personal files
+        const uploadResponse = await fetch('/api/files/upload', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+        
+        if (!uploadResponse.ok) {
+            throw new Error('Failed to upload file: ' + uploadResponse.statusText);
         }
+        
+        const fileData = await uploadResponse.json();
+        console.log("File uploaded successfully, ID:", fileData.id);
+        
+        // Step 2: Add file to the current room
+        console.log("Adding file to room:", roomId);
+        const roomResponse = await fetch(`/api/rooms/${roomId}/files`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ fileId: fileData.id })
+        });
+        
+        if (!roomResponse.ok) {
+            throw new Error('Failed to add file to room: ' + roomResponse.statusText);
+        }
+        
+        console.log("File added to room successfully");
+        
+        // Step 3: Notify others through WebSocket
+        if (stompClient && stompClient.connected) {
+            console.log("Notifying other users about the new file");
+            stompClient.send(`/app/room.file/${roomId}`, 
+                {'Authorization': `Bearer ${token}`}, 
+                JSON.stringify({type: 'FILE', content: fileData.id})
+            );
+        } else {
+            console.warn("WebSocket not connected, skipping notification");
+            // Still reload files even if WebSocket is not available
+            loadFiles();
+        }
+        
+        // Hide modal
+        const uploadModal = bootstrap.Modal.getInstance(document.getElementById('uploadModal'));
+        if (uploadModal) {
+            uploadModal.hide();
+        }
+        
+        // Reset form
+        document.getElementById('uploadForm').reset();
+        progressBar.classList.add('d-none');
+        progressBarInner.style.width = '0%';
+        
+    } catch (error) {
+        console.error('Error uploading file:', error);
+        alert('Error uploading file: ' + error.message);
+        progressBar.classList.add('d-none');
+    }
+}
         
         // Leave room
         function leaveRoom() {

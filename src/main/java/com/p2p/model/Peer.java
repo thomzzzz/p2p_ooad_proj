@@ -3,6 +3,8 @@ package com.p2p.model;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.Date;
+
 @Document(collection = "peers")
 public class Peer {
     
@@ -12,6 +14,7 @@ public class Peer {
     private String ipAddress;
     private int port;
     private boolean isOnline;
+    private Date lastSeen;
     
     // Getters and Setters
     public String getId() {
@@ -54,7 +57,15 @@ public class Peer {
         isOnline = online;
     }
     
-    // Additional methods
+    public Date getLastSeen() {
+        return lastSeen;
+    }
+    
+    public void setLastSeen(Date lastSeen) {
+        this.lastSeen = lastSeen;
+    }
+    
+    // Additional methods based on activity diagrams
     public void joinRoom(Room room) {
         // Logic to join a room
     }
